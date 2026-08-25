@@ -54,7 +54,7 @@ A lightweight, high-performance **Windows 11** user-space WinUSB MIDI bridge for
    - Click **Replace Driver**.
 
 ### 3. Running the Bridge
-Double-click `run_bridge.bat`. The console will display:
+Double-click `run_bridge.bat` (or run `fantomx-bridge.exe` directly). The console will display:
 ```text
 >>> Endpoint A (Host Bridge): Fantom-X Bridge Host
 >>> Endpoint B (DAW Client):  Roland Fantom-X
@@ -109,3 +109,4 @@ To compile the C++/WinRT bridge from source:
 ## License
 
 [MIT License](LICENSE) - Copyright (c) 2026 Hamilton Barber
+
