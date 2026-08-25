@@ -246,25 +246,35 @@ int main() {
         std::cout << " Microsoft WinUSB + Windows MIDI Services | Verified with Memory Integrity (HVCI)" << std::endl;
         std::cout << "================================================================================" << std::endl;
 
+        // Single-instance enforcement via named system mutex
+        HANDLE hSingleInstanceMutex = CreateMutexW(NULL, TRUE, L"Local\\FantomXWinUsbBridgeMutex");
+        if (hSingleInstanceMutex == NULL || GetLastError() == ERROR_ALREADY_EXISTS) {
+            std::cout << "\n>>> [INFO] Roland Fantom-X Bridge is already running in another window." << std::endl;
+            if (hSingleInstanceMutex != NULL) {
+                CloseHandle(hSingleInstanceMutex);
+            }
+            return 0;
+        }
+
         winrt::init_apartment();
 
         if (!MidiApi::EnsureServiceAvailable()) {
             std::cerr << "ERROR: Could not connect to Windows MIDI Service (MidiSrv)." << std::endl;
+            if (hSingleInstanceMutex != NULL) CloseHandle(hSingleInstanceMutex);
             return 1;
         }
 
         std::cout << "\n>>> Initializing Windows MIDI A/B Loopback Endpoint Pair..." << std::endl;
 
-        // Isolate loopback recovery: only clean up our own stale loopback pair if it exists
+        // Isolate loopback recovery: only clean up our own stale loopback pair if it exists from a past crash
         try {
-            if (MidiLoopbackManager::DoesLoopbackAExist(L"FantomXBridgeHost")) {
-                auto activeEntries = MidiLoopbackManager::GetActiveLoopbackEntries();
-                for (auto entry : activeEntries) {
-                    if (entry.EndpointA().Name() == L"Fantom-X Bridge Host") {
-                        MidiLoopbackRemovalConfig remConfig(entry.AssociationId());
-                        MidiLoopbackManager::RemoveTransientLoopback(remConfig);
-                        break;
-                    }
+            auto activeEntries = MidiLoopbackManager::GetActiveLoopbackEntries();
+            for (auto entry : activeEntries) {
+                if (entry.EndpointA().Name() == L"Fantom-X Bridge Host" || 
+                    entry.EndpointB().Name() == L"Roland Fantom-X") {
+                    MidiLoopbackRemovalConfig remConfig(entry.AssociationId());
+                    MidiLoopbackManager::RemoveTransientLoopback(remConfig);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 }
             }
         } catch (...) {}
@@ -274,17 +284,16 @@ int main() {
 
         definitionA.Name(L"Fantom-X Bridge Host");
         definitionA.Description(L"Internal Host Interface for fantomx-bridge");
-        definitionA.UniqueId(L"FantomXBridgeHost");
 
         definitionB.Name(L"Roland Fantom-X");
         definitionB.Description(L"Roland Fantom-X DAW Interface");
-        definitionB.UniqueId(L"RolandFantomX");
 
         MidiLoopbackCreationConfig creationConfig(definitionA, definitionB);
         auto response = MidiLoopbackManager::CreateTransientLoopback(creationConfig);
 
         if (!response.Success()) {
             std::wcerr << L"Failed to create loopback pair: " << response.ErrorMessage().c_str() << std::endl;
+            if (hSingleInstanceMutex != NULL) CloseHandle(hSingleInstanceMutex);
             return 1;
         }
 
@@ -362,6 +371,9 @@ int main() {
             } catch (...) {}
         }
         session.Close();
+        if (hSingleInstanceMutex != NULL) {
+            CloseHandle(hSingleInstanceMutex);
+        }
         return 0;
     } catch (const winrt::hresult_error& ex) {
         std::wcerr << L"[EXCEPTION] WinRT HRESULT: " << ex.message().c_str() << std::endl;
