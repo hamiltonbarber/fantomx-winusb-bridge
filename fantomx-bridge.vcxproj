@@ -3,7 +3,7 @@
   <Import Project="packages\Windows.Devices.Midi2.0.99.57-devpreview.5\build\native\Windows.Devices.Midi2.props" Condition="Exists('packages\Windows.Devices.Midi2.0.99.57-devpreview.5\build\native\Windows.Devices.Midi2.props')" />
   <Import Project="packages\Microsoft.Windows.CppWinRT.3.0.260520.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('packages\Microsoft.Windows.CppWinRT.3.0.260520.1\build\native\Microsoft.Windows.CppWinRT.props')" />
   <PropertyGroup Label="Globals">
-    <WindowsMidiServicesSdkPackage>Microsoft.Windows.Devices.Midi2.1.0.23-rc.5.17</WindowsMidiServicesSdkPackage>
+    
     <CppWinRTOptimized>true</CppWinRTOptimized>
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
     <CppWinRTGenerateWindowsMetadata>true</CppWinRTGenerateWindowsMetadata>
@@ -44,7 +44,7 @@
   </ItemGroup>
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '16.0'">v142</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '15.0'">v141</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '14.0'">v140</PlatformToolset>
@@ -167,4 +167,5 @@
     <Error Condition="!Exists('packages\Windows.Devices.Midi2.0.99.57-devpreview.5\build\native\Windows.Devices.Midi2.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Windows.Devices.Midi2.0.99.57-devpreview.5\build\native\Windows.Devices.Midi2.targets'))" />
   </Target>
 </Project>
+
 

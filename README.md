@@ -7,7 +7,7 @@ A lightweight, high-performance **Windows 11** user-space WinUSB MIDI bridge for
 ## Features
 
 ### Seamless DAW Integration
-- **Direct DAW connectivity** - Exposes a native Windows MIDI port (`Roland Fantom-X`) to FL Studio, Ableton Live, Reaper, Cubase, Studio One, and other DAWs
+- **Direct DAW connectivity** - Exposes a native Windows MIDI port (`Roland Fantom-X`) tested with FL Studio; exposes standard WinMM / Windows MIDI Services ports for other DAWs (Ableton, Reaper, Cubase, Studio One, etc.)
 - **Bidirectional streaming** - Low-latency capture of Note-On/Off (with velocity), 14-bit Pitch Bend, Modulation/CC, Polyphonic Aftertouch, Program Changes, and MIDI Real-Time Clocks, plus playback to the internal sound engine
 - **Bridge-lifetime DAW endpoint** - The DAW port survives Fantom-X hardware power cycles while the bridge daemon is running, allowing the synthesizer to be turned off and on without invalidating DAW device handles
 

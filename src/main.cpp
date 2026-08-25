@@ -61,14 +61,10 @@ void CleanupUsbHandles() {
 
 BOOL WINAPI ConsoleCtrlHandler(DWORD) {
     g_running = false;
-    CleanupUsbHandles();
-    if (g_associationId != winrt::guid{}) {
-        try {
-            MidiLoopbackRemovalConfig remConfig(g_associationId);
-            MidiLoopbackManager::RemoveTransientLoopback(remConfig);
-        } catch (...) {}
+    if (g_file_handle != INVALID_HANDLE_VALUE && g_file_handle != NULL) {
+        CancelIoEx(g_file_handle, NULL);
     }
-    return FALSE;
+    return TRUE;
 }
 
 std::vector<GUID> DiscoverFantomXGuids() {
@@ -147,10 +143,6 @@ bool SendRawUsbMidi(const BYTE* data, DWORD len) {
 }
 
 void StartUsbReader(WINUSB_INTERFACE_HANDLE winusb) {
-    if (g_reader_thread.joinable()) {
-        g_reader_thread.join();
-    }
-
     g_reader_thread = std::thread([winusb]() {
         BYTE rxBuf[64];
         while (g_usb_active) {
@@ -263,12 +255,17 @@ int main() {
 
         std::cout << "\n>>> Initializing Windows MIDI A/B Loopback Endpoint Pair..." << std::endl;
 
-        // Automatically clean up stale loopbacks from any previous session
+        // Isolate loopback recovery: only clean up our own stale loopback pair if it exists
         try {
-            auto activeEntries = MidiLoopbackManager::GetActiveLoopbackEntries();
-            for (auto entry : activeEntries) {
-                MidiLoopbackRemovalConfig remConfig(entry.AssociationId());
-                MidiLoopbackManager::RemoveTransientLoopback(remConfig);
+            if (MidiLoopbackManager::DoesLoopbackAExist(L"FantomXBridgeHost")) {
+                auto activeEntries = MidiLoopbackManager::GetActiveLoopbackEntries();
+                for (auto entry : activeEntries) {
+                    if (entry.EndpointA().Name() == L"Fantom-X Bridge Host") {
+                        MidiLoopbackRemovalConfig remConfig(entry.AssociationId());
+                        MidiLoopbackManager::RemoveTransientLoopback(remConfig);
+                        break;
+                    }
+                }
             }
         } catch (...) {}
 
@@ -277,9 +274,11 @@ int main() {
 
         definitionA.Name(L"Fantom-X Bridge Host");
         definitionA.Description(L"Internal Host Interface for fantomx-bridge");
+        definitionA.UniqueId(L"FantomXBridgeHost");
 
         definitionB.Name(L"Roland Fantom-X");
         definitionB.Description(L"Roland Fantom-X DAW Interface");
+        definitionB.UniqueId(L"RolandFantomX");
 
         MidiLoopbackCreationConfig creationConfig(definitionA, definitionB);
         auto response = MidiLoopbackManager::CreateTransientLoopback(creationConfig);
@@ -327,8 +326,11 @@ int main() {
 
         while (g_running) {
             if (!g_usb_active) {
+                // If previous handles existed from an earlier disconnect, cleanly release them before re-opening
+                CleanupUsbHandles();
+
                 std::wstring path = FindAttachedDevicePath(guids);
-                if (!path.empty()) {
+                if (!path.empty() && g_running) {
                     std::lock_guard<std::mutex> lock(g_usb_mutex);
                     g_file_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
                     if (g_file_handle != INVALID_HANDLE_VALUE) {
@@ -351,6 +353,7 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
 
+        // Deterministic shutdown in main thread
         CleanupUsbHandles();
         if (g_associationId != winrt::guid{}) {
             try {
