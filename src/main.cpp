@@ -266,16 +266,20 @@ int main() {
 
         std::cout << "\n>>> Initializing Windows MIDI A/B Loopback Endpoint Pair..." << std::endl;
 
-        // Isolate loopback recovery: only clean up our own stale loopback pair if it exists from a past crash
+        // Isolate loopback recovery: remove any stale Fantom-X pair from past crashed sessions
         try {
             auto activeEntries = MidiLoopbackManager::GetActiveLoopbackEntries();
+            bool removedStale = false;
             for (auto entry : activeEntries) {
-                if (entry.EndpointA().Name() == L"Fantom-X Bridge Host" || 
+                if (entry.EndpointA().Name() == L"Fantom-X Bridge Host" && 
                     entry.EndpointB().Name() == L"Roland Fantom-X") {
                     MidiLoopbackRemovalConfig remConfig(entry.AssociationId());
                     MidiLoopbackManager::RemoveTransientLoopback(remConfig);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                    removedStale = true;
                 }
+            }
+            if (removedStale) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(250));
             }
         } catch (...) {}
 
