@@ -1,0 +1,22 @@
+[package]
+name = "fantomx-bridge"
+version = "1.0.0"
+edition = "2021"
+authors = ["Hamilton Barber <hamiltonbarber@users.noreply.github.com>"]
+license = "MIT"
+description = "High-Performance Windows 11 WinUSB MIDI Bridge for Roland Fantom-X Synthesizers"
+repository = "https://github.com/hamiltonbarber/fantomx-winusb-bridge"
+
+[dependencies]
+windows-sys = { version = "0.52", features = [
+    "Win32_Foundation",
+    "Win32_Devices_Usb",
+    "Win32_Devices_DeviceAndDriverInstallation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_IO",
+    "Win32_System_Threading",
+    "Win32_Media_Audio",
+    "Win32_System_Com",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Registry",
+] }

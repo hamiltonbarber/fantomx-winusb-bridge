@@ -1,0 +1,15 @@
+/target
+/bin
+/intermediate
+/packages
+*.user
+*.pdb
+*.obj
+*.iobj
+*.ipdb
+*.tlog
+*.lastbuildstate
+*.log
+*.tmp
+**/*.rs.bk
+Cargo.lock
